@@ -20,8 +20,6 @@ Des images que j'ai produit :
 
 ![image](https://user-images.githubusercontent.com/83585287/236011970-5c7a62f3-445a-4162-a734-b08b4d40da80.png)
 
-Une flamme de ma production :
-
 ![image](https://user-images.githubusercontent.com/83585287/236011701-6c6e96df-6561-4c30-9779-a261aa49492b.png)
 
 (Merci, de partager et citer mon travail dans vos futurs recherches).
