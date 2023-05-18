@@ -14,66 +14,32 @@
 #include <tchar.h>
 #include <string>
 
-//Propre a visual studio
+//Fichiers essantiels pour l'application
+#include "Configuration.h"
+#include "StructuresRenduVisuel.h"
+#include "IterateurImages.h"
+
+//Propre à visual studio
 #pragma comment(lib, "user32.lib")
 
+//_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+//°---------------------------------------------------------°
+//|         DEBUT INTEERFACE                                |
+//°---------------------------------------------------------°
 /**
 Espace contenant toutes nos structures et classes nécessaires
 pour développer l'espace de notre console virtuelle
 **/
 namespace gui{
-    //On assure pour nos futures classes qui nécessite cettre classe qu'elle existe quelque part lors de la compilation
+    //On assure pour nos futures classes qui utilisent cette classe, existe quelque lors de la compilation
     class Console;
 
-    const uint8_t nDefautAlpha = 0xFF;
-    constexpr uint8_t nDefautPixel = (nDefautAlpha << 24);
-    
     //°-------------------------------------------------------------°
     //|         rcode - nos valeurs de retour si c'est OK ou NON    |
+    //|         Toutes fonctions qui doit retourner l'état          |
+    //|         de notre console utilisent cette enum               |
     //°-------------------------------------------------------------°
-    enum rcode {FAIL = 0, OK = 1, NO_FILE = -1};
-
-    /**
-    Représentation d'un vecteur 2D générique possédant
-    une coordonnée x et y Et les opérations surdéfinies nécessaires
-
-    Exemple d'implémentation de cette structure : 
-            | typedef Vecteur2D<int> vi2D; |
-            | typedef Vecteur2D<double> vd2D; |
-            | typedef Vecteur2D<uint32_t> vu2D; |
-
-    TEST : OK
-    **/
-    template <class T>
-    struct Vecteur2D {
-        T x = 0;
-        T y = 0;
-        Vecteur2D() : x(0), y(0) {}
-        Vecteur2D(T _x, T _y) : x(_x), y(_y) {}
-        Vecteur2D(const Vecteur2D& v) : x(v.x), y(v.y) {}
-        Vecteur2D& operator= (const Vecteur2D& v) = default;
-        Vecteur2D operator+ (const Vecteur2D& v) const { return Vecteur2D(x + v.x, y + v.y); }
-        Vecteur2D operator- (const Vecteur2D& v) const { return Vecteur2D(x - v.x, y - v.y); }
-        Vecteur2D operator* (const Vecteur2D& v) const { return Vecteur2D(x * v.x, y * v.y); }
-        Vecteur2D operator* (const T& v) const { return Vecteur2D(x * v, y * v); }
-        Vecteur2D operator/ (const Vecteur2D& v) const { return Vecteur2D(x / v.x, y / v.y); }
-        Vecteur2D operator/ (const T& v) const { return Vecteur2D(x / v, y / v); }
-        Vecteur2D& operator+= (const Vecteur2D& v) { this->x += v.x; this->y += v.y; return *this; }
-        Vecteur2D& operator-= (const Vecteur2D& v) { this->x -= v.x; this->y -= v.y; return *this; }
-        Vecteur2D& operator*= (const Vecteur2D& v) { this->x *= v.x; this->y *= v.y; return *this; }
-        Vecteur2D& operator*= (const T& v) { this->x *= v; this->y *= v; return *this; }
-        Vecteur2D& operator/= (const Vecteur2D& v) { this->x /= v.x; this->y /= v.y; return *this; }
-        Vecteur2D& operator/= (const T& v) { this->x /= v; this->y /= v; return *this; }
-
-        bool operator== (const Vecteur2D& v) const { return (this->x == v.x && this->y == v.y); }
-        bool operator!= (const Vecteur2D& v) const { return (this->x != v.x && this->y != v.y); }
-
-        const std::string str() const { return std::string("[ " + std::to_string(this->x) + " , " + std::to_string(this->y) + " ]"); }
-
-        T norme2() const { return (x * x) + (y * y); }
-
-        friend std::ostream& operator<< (std::ostream& o, const Vecteur2D& v) { return (o << v.str()); }
-    };
+    enum class rcode {FAIL = 0, OK = 1, NO_FILE = -1};
 
     //°---------------------------------------------------------°
     //|         Définition de nos variables                     |
@@ -84,17 +50,11 @@ namespace gui{
     typedef Vecteur2D<float> vf2D;
     typedef Vecteur2D<double> vd2D;
 
-    vi2D vTailleEcran = { 240, 400 };
-    vi2D vTaillePixel = { 4, 4 };
+    vi2D vTailleEcran = { gui_conf::W_HAUTEUR, gui_conf::W_LARGEUR };
+    vi2D vTaillePixel = { gui_conf::W_PIXEL_H, gui_conf::W_PIXEL_L};
     vi2D vTailleFenetre = { 0,0 };
-    bool bPleinEcran = false;
+    bool bPleinEcran = gui_conf::PLEINECRAN;
     vf2D vPixel = { 1.0f, 1.0f };
-
-    struct Controleur {
-        bool cPresse;
-        bool cRelache;
-        bool cMaintenu;
-    };
 
     enum Touche {
         NONE,
@@ -110,48 +70,17 @@ namespace gui{
         OEM_1, OEM_2, OEM_3, OEM_4, OEM_5, OEM_6, OEM_7, OEM_8,
         CAPS_LOCK, ENUM_END
     };
-
+ 
     //°---------------------------------------------------------°
-    //|         Pixel - INTEERFACE                              |
-    //°---------------------------------------------------------°
-
-    struct pixel {
-        union {
-            uint32_t n = nDefautPixel;
-            struct { uint8_t r; uint8_t v; uint8_t b; uint8_t a; };
-        };
-
-        pixel();
-        pixel(uint8_t rouge, uint8_t vert, uint8_t bleu, uint8_t alpha);
-        pixel(uint32_t p);
-        pixel& operator = (const pixel& p) = default;
-        bool operator == (const pixel& p) const;
-        bool operator != (const pixel& p) const;
-        pixel operator * (const float f) const;
-        pixel operator / (const float f) const;
-        pixel& operator *= (const float f);
-        pixel& operator /= (const float f);
-        pixel operator + (const pixel& p) const;
-        pixel operator - (const pixel p) const;
-        pixel& operator += (const pixel& p);
-        pixel& operator -= (const pixel p);
-        pixel operator * (const pixel& p) const;
-    };
-
-    //°---------------------------------------------------------°
-    //|         Pixel - FIN INTEERFACE                          |
-    //°---------------------------------------------------------°
-  
-    //°---------------------------------------------------------°
-    //|         Vitre - INTEERFACE                              |
+    //|         Ecran - INTEERFACE                              |
     //°---------------------------------------------------------°
     /**
-    C'est notre 
+    C'est notre écran
     **/
-    class Vitre
+    class Ecran
     {
     public:
-        virtual ~Vitre() = default;
+        virtual ~Ecran() = default;
         virtual rcode StartApplication() = 0;
         virtual rcode NettoyageApplication() = 0;
         virtual rcode StartThread() = 0;
@@ -162,11 +91,57 @@ namespace gui{
         static Console* ptrConsole;
     };
     //°---------------------------------------------------------°
-    //|         Vitre - FIN INTEERFACE                              |
+    //|         Ecran - FIN INTEERFACE                          |
     //°---------------------------------------------------------°
 
     //pour avoir un accés partout dans le code et qu'il soit unique
-    static std::unique_ptr<Vitre> vitre;
+    static std::unique_ptr<Ecran> ecran;
+
+    //°---------------------------------------------------------°
+    //|         graphisme_Bitmap - INTEERFACE                   |
+    //°---------------------------------------------------------°
+    /**
+    graphisme_Bitmap est notre image a chaque frame, on peut le comparer a un sprite d'image
+    Cette class s'occupe de contenir la mémoire pour l'instant présent.
+    (Fun fact, sprite veut dire lutin, ... voila c'est tout ^^')
+    **/
+    template<class T>
+    class graphisme_Bitmap {
+    public:
+        //Les pixels affichés à l'écran
+        T** matricePixel;
+        //Notre itérateur pour se déplacer dans la matrice 2D
+        gui_ite::ImageTableau<T> ite_Tableau;
+
+        //---------------------------------Contruscteur----------------------------
+        graphisme_Bitmap(const T PixelDefaut, const int hauteur, const int largeur);
+        ~graphisme_Bitmap() { delete[] matricePixel[0]; delete[] matricePixel; }
+
+        /*
+        * Méthode qui change le pixel désigné par les coordonnées x, y par p
+        * Attention: il faut que p soit du même type que la classe
+        */
+        const bool setPixel(const int x, const int y, const T& p);
+        /*
+        * Méthode qui retourne le pixel désigné par les coordonnées x, y
+        * Attention: il faut que p soit du même type que la classe
+        */
+        const T* getPixel(const int x, const int y)const;
+
+        /*
+        * Surdéfinition de string(), décrit la classe graphisme_Bitmap
+        * @return string
+        */
+        operator std::string()const;
+
+        /*
+        * ostream << graphisme_Bitmap
+        */
+        friend std::ostream& operator<< (std::ostream& o, const graphisme_Bitmap& gb) { return (o << (std::string)gb); }
+    };
+    //°---------------------------------------------------------°
+    //|         FIN graphisme_Bitmap - INTEERFACE               |
+    //°---------------------------------------------------------°
 
     //°---------------------------------------------------------°
     //|         Console - INTEERFACE                            |
@@ -206,6 +181,14 @@ namespace gui{
         /*Retourne la molette  de la souris*/
         int32_t getMouseMolette() const;
 
+        /*Retourne la hauteur de la fenetre sous forme de constante (Utile pour l'initialisation d'une fenetre)*/
+        const int32_t hauteurFenetre()const;
+        /*Retourne la largeur de la fenetre sous forme de constante (Utile pour l'initialisation d'une fenetre)*/
+        const int32_t largeurFenetre()const;
+
+        uint32_t getFPS()const;
+        
+
         /**
         Permet une souplesse pour de prochaine implémentation
         **/
@@ -216,78 +199,72 @@ namespace gui{
     //°---------------------------------------------------------°
     //|         Console - FIN INTEERFACE                        |
     //°---------------------------------------------------------°
-
 }
+//°---------------------------------------------------------°
+//|         FIN INTEERFACE                                  |
+//°---------------------------------------------------------°
+//_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+//°---------------------------------------------------------°
+//|         DEBUT IMPLEMENTATION                            |
+//°---------------------------------------------------------°
 
-/*
-
-*/
 namespace gui {
 
     //°---------------------------------------------------------°
-    //|         Pixel - IMPLEMENTATION                          |
+    //|         graphisme_Bitmap - IMPLEMENTAION                |
     //°---------------------------------------------------------°
-    pixel::pixel() { r = 0; v = 0; b = 0; a = nDefautAlpha; }
-    inline pixel::pixel(uint8_t rouge, uint8_t vert, uint8_t bleu, uint8_t alpha) { n = rouge | (vert << 8) | (bleu << 16) | (alpha << 24); }
-    inline pixel::pixel(uint32_t p) { n = p; }
-    inline bool pixel::operator==(const pixel& p) const { return n == p.n; }
-    inline bool pixel::operator!=(const pixel& p) const { return n != p.n; }
-    inline pixel pixel::operator*(const float f) const {
-        float fR = std::min(255.0f, std::max(0.0f, float(r) * f));
-        float fV = std::min(255.0f, std::max(0.0f, float(v) * f));
-        float fB = std::min(255.0f, std::max(0.0f, float(b) * f));
-        return pixel(uint8_t(fR), uint8_t(fV), uint8_t(fB), a);
+
+    template<class T>
+    inline graphisme_Bitmap<T>::graphisme_Bitmap(const T PixelDefaut, const int hauteur, const int largeur)
+    {
+        matricePixel = new T * [hauteur];
+        T* dataContigu = new T[hauteur * largeur];
+        int i, j;
+        for (i = 0; i < largeur; i++) {
+            matricePixel[i] = &dataContigu[i * largeur];
+            for (j = 0; j < largeur; j++) {
+                matricePixel[i][j] = i + j;
+            }
+        }
+
+        ite_Tableau = gui_ite::ImageTableau<T>((T*)*matricePixel, hauteur - 1, largeur - 1, largeur);
     }
-    inline pixel pixel::operator/(const float f) const {
-        float fR = std::min(255.0f, std::max(0.0f, float(r) / f));
-        float fV = std::min(255.0f, std::max(0.0f, float(v) / f));
-        float fB = std::min(255.0f, std::max(0.0f, float(b) / f));
-        return pixel(uint8_t(fR), uint8_t(fV), uint8_t(fB), a);
+
+    template<class T>
+    inline const bool graphisme_Bitmap<T>::setPixel(const int x, const int y, const T& p)
+    {
+        if (x >= 0 && y >= 0 && x < vTailleEcran.x && y < vTailleEcran.y) {
+            ite_Tableau.setPixel(x, y, p);
+            return true;
+        }
+        return false;
     }
-    inline pixel& pixel::operator*=(const float f) {
-        this->r = std::min(255.0f, std::max(0.0f, float(r) * f));
-        this->v = std::min(255.0f, std::max(0.0f, float(v) * f));
-        this->b = std::min(255.0f, std::max(0.0f, float(b) * f));
-        return *this;
+
+    template<class T>
+    inline const T* graphisme_Bitmap<T>::getPixel(const int x, const int y) const
+    {
+        if (x >= 0 && y >= 0 && x < vTailleEcran.x && y < vTailleEcran.y) {
+            return ite_Tableau.getPixel(x, y);
+        }
+        return new T();
     }
-    inline pixel& pixel::operator/=(const float f) {
-        this->r = std::min(255.0f, std::max(0.0f, float(r) / f));
-        this->v = std::min(255.0f, std::max(0.0f, float(v) / f));
-        this->b = std::min(255.0f, std::max(0.0f, float(b) / f));
-        return *this;
+
+    template<class T>
+    inline graphisme_Bitmap<T>::operator std::string() const
+    {
+        std::string str = "";
+        int i, j;
+        for (i = 0; i < vTailleEcran.x; i++) {
+            for (j = 0; j < vTailleEcran.y; j++) {
+                str += std::to_string(*ite_Tableau.getPixel(i, j));
+            }
+            str += '\n';
+        }
+        return str;
     }
-    inline pixel pixel::operator+(const pixel& p) const {
-        uint8_t R = std::min(255, std::max(0, int(r) + int(p.r)));
-        uint8_t V = std::min(255, std::max(0, int(v) + int(p.v)));
-        uint8_t B = std::min(255, std::max(0, int(b) + int(p.b)));
-        return pixel(R, V, B, a);
-    }
-    inline pixel pixel::operator-(const pixel p) const {
-        uint8_t R = std::min(255, std::max(0, int(r) - int(p.r)));
-        uint8_t V = std::min(255, std::max(0, int(v) - int(p.v)));
-        uint8_t B = std::min(255, std::max(0, int(b) - int(p.b)));
-        return pixel(R, V, B, a);
-    }
-    inline pixel& pixel::operator+=(const pixel& p) {
-        this->r = std::min(255, std::max(0, int(r) + int(p.r)));
-        this->v = std::min(255, std::max(0, int(v) + int(p.v)));
-        this->b = std::min(255, std::max(0, int(b) + int(p.b)));
-        return *this;
-    }
-    inline pixel& pixel::operator-=(const pixel p) {
-        this->r = std::min(255, std::max(0, int(r) - int(p.r)));
-        this->v = std::min(255, std::max(0, int(v) - int(p.v)));
-        this->b = std::min(255, std::max(0, int(b) - int(p.b)));
-        return *this;
-    }
-    inline pixel pixel::operator*(const pixel& p) const{
-        uint8_t R = std::min(255, std::max(0, int(r) * int(p.r)));
-        uint8_t V = std::min(255, std::max(0, int(v) * int(p.v)));
-        uint8_t B = std::min(255, std::max(0, int(b) * int(p.b)));
-        return pixel(R, V, B, a);
-    }
+
     //°---------------------------------------------------------°
-    //|         Pixel - FIN IMPLEMENTAION                       |
+    //|        FIN graphisme_Bitmap - IMPLEMENTAION             |
     //°---------------------------------------------------------°
 
     //°---------------------------------------------------------°
@@ -307,23 +284,23 @@ namespace gui {
         //{ 2.0f / vTailleEcran.x,  2.0f / vTailleEcran.y };
 
         if (vTaillePixel.x <= 0 || vTaillePixel.y <= 0 || vTailleEcran.x <= 0 || vTailleEcran.y <= 0)
-            return gui::FAIL;
-        return gui::OK;
+            return rcode::FAIL;
+        return rcode::OK;
     }
     rcode Console::Start() {
-        if (vitre->StartApplication() != gui::OK)
-            return gui::FAIL;
+        if (ecran->StartApplication() != rcode::OK)
+            return rcode::FAIL;
 
-        if (vitre->CreationFenetreVitre({ 40, 40 }, vTailleFenetre, bPleinEcran) != gui::OK)
-            return gui::FAIL;
+        if (ecran->CreationFenetreVitre({ 40, 40 }, vTailleFenetre, bPleinEcran) != rcode::OK)
+            return rcode::FAIL;
 
         //Thread TODO plus tard
-        if (vitre->StartBoucleEvenementSysteme() != gui::OK)
-            return gui::FAIL;
+        if (ecran->StartBoucleEvenementSysteme() != rcode::OK)
+            return rcode::FAIL;
 
-        if (vitre->NettoyageApplication() != gui::OK)
-            return gui::FAIL;
-        return gui::OK;
+        if (ecran->NettoyageApplication() != rcode::OK)
+            return rcode::FAIL;
+        return rcode::OK;
     }
     inline bool Console::initialisation()
     {
@@ -361,12 +338,35 @@ namespace gui {
     {
         return int32_t();
     }
+    inline const int32_t Console::hauteurFenetre() const {
+        if (vTailleFenetre.x <= 0)
+            return gui_conf::W_HAUTEUR;
+        return vTailleFenetre.x;
+    }
+    inline const int32_t Console::largeurFenetre() const {
+        if (vTailleFenetre.y <= 0)
+            return gui_conf::W_LARGEUR;
+        return vTailleFenetre.y;
+    }
+    inline uint32_t Console::getFPS() const
+    {
+        return uint32_t();
+    }
     inline const vi2D& Console::getFenetreSouris() const
     {
         // TODO: insérer une instruction return ici
     }
 
-    class Vitre_Windows : public Vitre {
+    //°---------------------------------------------------------°
+    //|         FIN Consol - IMPLEMENTAION                      |
+    //°---------------------------------------------------------°
+
+
+    //°---------------------------------------------------------°
+    //|         Ecran_Windows - IMPLEMENTAION ECRAN             |
+    //°---------------------------------------------------------°
+
+    class Ecran_Windows : public Ecran {
     private:
         HWND gui_hwnd = nullptr;
         std::wstring ConvertionS2W(const std::string& s) {
@@ -381,13 +381,14 @@ namespace gui {
     public:
         virtual rcode StartApplication() override { return rcode::OK; }
         virtual rcode NettoyageApplication() override { return rcode::OK; }
+
+        //TODO: Implémenter le rendu visuel dans un thread
         virtual rcode StartThread() override { return rcode::OK; }
-        //TODO:
         virtual rcode NettoyageThread() override { return rcode::OK; }
         virtual rcode SetNomFenetre(const std::string& s) override {
             if (SetWindowText(gui_hwnd, ConvertionS2W(s).c_str()) != 0)
-                return gui::FAIL;
-            return gui::OK;
+                return rcode::FAIL;
+            return rcode::OK;
         }
         virtual rcode StartBoucleEvenementSysteme() override {
             MSG Msg;
@@ -396,7 +397,7 @@ namespace gui {
                 TranslateMessage(&Msg);
                 DispatchMessage(&Msg);
             }
-            return gui::OK;
+            return rcode::OK;
         }
         virtual rcode CreationFenetreVitre(const vi2D& positionFenetre, const vi2D& tailleFenetre, bool pleinEcran) override {
             WNDCLASSEX wcex;
@@ -421,7 +422,7 @@ namespace gui {
                     _T("Appel à RegisterClassEx failed"),
                     _T("Windoww Console Infographie"),
                     NULL);
-                return gui::FAIL;
+                return rcode::FAIL;
             }
             DWORD dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
             DWORD dwStyle = WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_THICKFRAME;
@@ -433,16 +434,15 @@ namespace gui {
                 HMONITOR hmon = MonitorFromWindow(gui_hwnd, MONITOR_DEFAULTTONEAREST);
                 MONITORINFO mi = { sizeof(mi) };
                 if (!GetMonitorInfo(hmon, &mi)) return rcode::FAIL;
-                vTailleFenetre = { mi.rcMonitor.right, mi.rcMonitor.bottom };
+                vTailleFenetre = { mi.rcMonitor.bottom, mi.rcMonitor.right };
                 vHautGauche.x = 0;
                 vHautGauche.y = 0;
             }
 
-
             RECT rWndRect = { 0, 0, tailleFenetre.x, tailleFenetre.y };
             AdjustWindowRectEx(&rWndRect, dwStyle, FALSE, dwExStyle);
-            int width = rWndRect.right - rWndRect.left;
-            int height = rWndRect.bottom - rWndRect.top - 90;
+            int width = rWndRect.bottom - rWndRect.top - 30;
+            int height = rWndRect.right - rWndRect.left - 72;
 
             gui_hwnd = CreateWindowEx(dwExStyle,          // Optional window styles.
                 CLASS_NAME,                     // Window class
@@ -464,14 +464,13 @@ namespace gui {
                     _T("Windows Desktop Guided Tour"),
                     NULL);
 
-                return gui::FAIL;
+                return rcode::FAIL;
             }
 
             ShowWindow(gui_hwnd, 1);
             UpdateWindow(gui_hwnd);
-            return gui::OK;
+            return rcode::OK;
         }
-
 
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             PAINTSTRUCT ps;
@@ -484,11 +483,15 @@ namespace gui {
                 // Here your application is laid out.
                 // For this introduction, we just print out "Hello, Windows desktop!"
                 // in the top left corner.
-                TextOut(hdc,
+               /* TextOut(hdc,
                     5, 5,
                     greeting, _tcslen(greeting));
                 // End application-specific layout section.
-
+                */
+                SetPixel(hdc, 50, 50, RGB(255, 0, 0));
+                SetPixel(hdc, 51, 50, RGB(255, 0, 0));
+                SetPixel(hdc, 51, 51, RGB(255, 0, 0));
+                SetPixel(hdc, 50, 51, RGB(255, 0, 0));
                 EndPaint(hwnd, &ps);
                 break;
             
@@ -501,26 +504,53 @@ namespace gui {
             }
             return DefWindowProc(hwnd, msg, wParam, lParam);
         }
-
     };
+
+    //°---------------------------------------------------------°
+    //|         FIN Ecran_Windows - IMPLEMENTAION               |
+    //°---------------------------------------------------------°
 }
+//°---------------------------------------------------------°
+//|         FIN IMPLEMENTAION                               |
+//°---------------------------------------------------------°
+//_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+//°---------------------------------------------------------°
+//|         DEBUT HEADLESS                                  |
+//°---------------------------------------------------------°
 
 namespace gui {
-    class Vitre_Headless : public Vitre {
-        virtual rcode StartApplication() { return gui::OK; }
-        virtual rcode NettoyageApplication() { return gui::OK; }
-        virtual rcode StartThread() { return gui::OK; }
-        virtual rcode NettoyageThread() { return gui::OK; }
-        virtual rcode SetNomFenetre(const std::string& s) { return gui::OK; }
-        virtual rcode StartBoucleEvenementSysteme() { return gui::OK; }
-        virtual rcode CreationFenetreVitre(const vi2D& positionFenetre, const vi2D& tailleFenetre, bool pleinEcran) { return gui::OK; }
-
+    /**
+    Ecran_Headless est un classe fantôme
+    c'est à dire qu'elle permet d'eviter de redéfinir toutes les méthodes contenues dans "Ecran"
+    Très pratique, mais peut créer beaucoup de problème si on manque de rigueur
+    **/
+    class Ecran_Headless : public Ecran {
+        virtual rcode StartApplication() { return rcode::OK; }
+        virtual rcode NettoyageApplication() { return rcode::OK; }
+        virtual rcode StartThread() { return rcode::OK; }
+        virtual rcode NettoyageThread() { return rcode::OK; }
+        virtual rcode SetNomFenetre(const std::string& s) { return rcode::OK; }
+        virtual rcode StartBoucleEvenementSysteme() { return rcode::OK; }
+        virtual rcode CreationFenetreVitre(const vi2D& positionFenetre, const vi2D& tailleFenetre, bool pleinEcran) { return rcode::OK; }
     };
 }
-
+//°---------------------------------------------------------°
+//|         FIN HEADLESS                                    |
+//°---------------------------------------------------------°
+//_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+//°---------------------------------------------------------°
+//|         DEBUT CONFIGURATION OS                          |
+//°---------------------------------------------------------°
 
 namespace gui {
+    /**
+    Ici, on déclare a la toute fin la configurationSysteme de l'exploitant (: l'os du client)
+    très pratique si on veut dévolpper cette application pour OS apple ou linux
+    **/
     inline void gui::Console::gui_ConfigurationSysteme() {
-        vitre = std::make_unique<Vitre_Windows>();
+        ecran = std::make_unique<Ecran_Windows>();
     }
 }
+//°---------------------------------------------------------°
+//|         FIN CONFIGURATION OS                            |
+//°---------------------------------------------------------°
