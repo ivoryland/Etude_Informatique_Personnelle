@@ -1,25 +1,27 @@
 # Etude_Informatique_Personnelle
 Dépôt contenant mes recherches personnelles et codes développés. 
 
-Je travail depuis ce début d'année sur la création de flamme graçe à un sous-type de système à particule.
-Et lors de mes recherches, je me suis pris de passion pour développer une interface de rendue visuelle à l'aide 
-de la librairie windows.h compris dans le pack standard de C++.
+Je travaille depuis ce début d'année sur la création de flamme grâce à un sous-type de système à particules.
+Lors de mes recherches, je me suis pris de passion pour développer une interface de rendu visuel à l'aide 
+de la librairie windows.h comprise dans le package standard de C++ 16.7 (supérieure à 14).
 
-Mes études s'appuient sur la documentation Microsoft : https://learn.microsoft.com/fr-fr/windows/win32/learnwin32/learn-to-program-for-windows
-et autre vidéo que je trouve sur internent.
+C'est pourquoi je laisse à disposition mon travail a disposition des curieux !
 
-La version de C++ utilisée est 16.7 (je suis sur que la version est supérieure à 14).
+Mes études s'appuient sur la documentation Microsoft [1]
+et diverses vidéos et études trouvées sur Internet.
 
-Aussi, tous travails que vous lirez ne sont pas perfait et je décline toutes responsabilités en cas de problème
+De plus, je décline toutes responsabilités en cas de problème
 du à mon code (seg_v, perte de mémoire, etc...).
 
-Enfin, je laisse à disposition mes recherches à toutes personne qui en on besoin, c'est pourquoi je m'efforce de
-commenter chaque fonction et variable nécessaire.
-
-Des images que j'ai produit :
+Quelques images que j'ai produit :
 
 ![image](https://user-images.githubusercontent.com/83585287/236011970-5c7a62f3-445a-4162-a734-b08b4d40da80.png)
 
 ![image](https://user-images.githubusercontent.com/83585287/236011701-6c6e96df-6561-4c30-9779-a261aa49492b.png)
 
-(Merci, de partager et citer mon travail dans vos futurs recherches).
+(Merci de partager et citer mon travail dans vos futures recherches).
+
+Références :
+  - [1] https://learn.microsoft.com/fr-fr/windows/win32/learnwin32/learn-to-program-for-windows   (Documentation Microsoft)
+  - [2] http://nicolas.janey.free.fr/Algorithme/Algorithmique.htm#segments                        (Algorithme de Bresenham)
+  - [3] https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/olcPixelGameEngine.h#L788  (Source d'inspiration principale)
